@@ -3,7 +3,7 @@ from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
+    queryset = Course.objects.prefetch_related('lesson_set')
     serializer_class = CourseSerializer
 
 class LessonListAPIView(generics.ListAPIView):
