@@ -21,3 +21,10 @@ class PaymentSerializer(serializers.ModelSerializer):
                 "Нужно указать либо paid_course, либо paid_lesson (строго одно)."
             )
         return attrs
+
+class UserSerializer(serializers.ModelSerializer):
+    payments = PaymentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ("id", "email", "payments")
