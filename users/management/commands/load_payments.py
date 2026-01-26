@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.management import BaseCommand
 
-from lms.models import Course, Lesson, Payment
+from lms.models import Course, Lesson
+from users.models import Payment
 from datetime import date
 
 
