@@ -7,3 +7,7 @@ class IsModer(BasePermission):
             user and user.isauthenticated and
             user.groups.filter(name="moderators").exists()
         )
+
+class IsOwner(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return bool(request.user and request.user.is_authenticated and getattr(obj, "owner_id", None) == request.user.id)
