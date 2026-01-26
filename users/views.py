@@ -1,8 +1,11 @@
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
+
 from .filters import PaymentFilter
 from .models import User, Payment
-from .serializers import UserProfileSerializer, PaymentSerializer, RegisterSerializer
+from .permissions import IsSelfOrStaff
+from .serializers import UserProfileSerializer, PaymentSerializer, RegisterSerializer, UserSerializer
 
 
 class UserProfileUpdateAPIView(generics.RetrieveUpdateAPIView):
@@ -19,3 +22,13 @@ class PaymentListAPIView(generics.ListAPIView):
 class RegisterAPIView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAuthenticated(), IsSelfOrStaff()]
+        return [IsAuthenticated()]
