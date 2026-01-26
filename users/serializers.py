@@ -44,3 +44,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             user.set_password(password)
             user.save()
             return user
+
+class PublicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "email")
+
+class PrivateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "email", "first_name", "last_name")
