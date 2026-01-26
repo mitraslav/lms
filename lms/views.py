@@ -18,9 +18,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "create":
-            return [IsAuthenticated(), IsModer()]
+            return [IsAuthenticated(), ~IsModer()]
         if self.action == "destroy":
-            return [IsAuthenticated(), IsOwner(), IsModer()]
+            return [IsAuthenticated(), IsOwner(), ~IsModer()]
         if self.action in ("update", "partial_update"):
             return [IsAuthenticated(), (IsModer()|IsOwner())]
         return [IsAuthenticated()]
