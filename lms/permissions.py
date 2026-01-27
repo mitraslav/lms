@@ -13,6 +13,10 @@ class IsModer(BasePermission):
             and user.groups.filter(name="moderators").exists()
         )
 
+    def  has_object_permission(self, request, view, obj):
+        # важно для ~IsModer в DestroyAPIView
+        return self.has_permission(request, view)
+
 
 class IsOwner(BasePermission):
     """
