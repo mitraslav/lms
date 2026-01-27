@@ -7,13 +7,14 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Course, Lesson, Subscription
 from .permissions import IsModer, IsOwner
 from .serializers import CourseSerializer, LessonSerializer
-from .paginators import BasePaginaton
+from .paginators import BasePagination
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.prefetch_related('lesson_set')
+    queryset = Course.objects.prefetch_related('lessons')
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = BasePagination
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -56,6 +57,7 @@ class LessonBaseQuerysetMixin:
 class LessonListAPIView(LessonBaseQuerysetMixin, generics.ListAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = BasePagination
 
 
 class LessonRetrieveAPIView(LessonBaseQuerysetMixin, generics.RetrieveAPIView):
