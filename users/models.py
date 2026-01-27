@@ -1,6 +1,9 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from .managers import UserManager
+from lms.models import Course, Lesson
+
 
 class User(AbstractUser):
     username = None
