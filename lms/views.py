@@ -1,9 +1,13 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
 from .permissions import IsModer, IsOwner
 from .serializers import CourseSerializer, LessonSerializer
+from .paginators import BasePaginaton
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -78,3 +82,19 @@ class LessonDestroyAPIView(LessonBaseQuerysetMixin, generics.DestroyAPIView):
     serializer_class = LessonSerializer
     # модератор не может удалять; владелец (немодератор) может удалять свое
     permission_classes = [IsAuthenticated, IsOwner, ~IsModer]
+
+class SubscriptionToggleAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = kwargs.get("pk") or request.data.get("course_id")
+        course = get_object_or_404(Course, pk=course_id)
+
+        subs_qs = Subscription.objects.filter(user=user, course=course)
+        if subs_qs.exists():
+            subs_qs.delete()
+            return Response({"message": "подписка удалена", "subscribed": False})
+
+        Subscription.objects.create(user=user, course=course)
+        return Response({"message": "подписка добавлена", "subscribed": True})
