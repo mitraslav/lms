@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 
-from django.conf.global_settings import AUTH_USER_MODEL
+from django.conf.global_settings import AUTH_USER_MODEL, CSRF_TRUSTED_ORIGINS
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,6 +42,8 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "django_filters",
+    "drf_yasg",
+    "corsheaders",
 
     'users',
     'lms',
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -144,3 +147,12 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "https://read-only.example.com",
+    "https://read-and-write.example.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://read-and-write.example.com",
+]
