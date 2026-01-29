@@ -1,15 +1,20 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .models import Course, Lesson
+from .models import Course, Lesson, Subscription
 from .permissions import IsModer, IsOwner
 from .serializers import CourseSerializer, LessonSerializer
+from .paginators import BasePagination
 
 
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.prefetch_related('lesson_set')
+    queryset = Course.objects.prefetch_related('lessons')
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = BasePagination
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -52,6 +57,7 @@ class LessonBaseQuerysetMixin:
 class LessonListAPIView(LessonBaseQuerysetMixin, generics.ListAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = BasePagination
 
 
 class LessonRetrieveAPIView(LessonBaseQuerysetMixin, generics.RetrieveAPIView):
@@ -78,3 +84,19 @@ class LessonDestroyAPIView(LessonBaseQuerysetMixin, generics.DestroyAPIView):
     serializer_class = LessonSerializer
     # модератор не может удалять; владелец (немодератор) может удалять свое
     permission_classes = [IsAuthenticated, IsOwner, ~IsModer]
+
+class SubscriptionToggleAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        course_id = kwargs.get("pk") or request.data.get("course_id")
+        course = get_object_or_404(Course, pk=course_id)
+
+        subs_qs = Subscription.objects.filter(user=user, course=course)
+        if subs_qs.exists():
+            subs_qs.delete()
+            return Response({"message": "подписка удалена", "subscribed": False})
+
+        Subscription.objects.create(user=user, course=course)
+        return Response({"message": "подписка добавлена", "subscribed": True})
