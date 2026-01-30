@@ -12,7 +12,7 @@ from .filters import PaymentFilter
 from .models import User, Payment
 from .permissions import IsSelfOrStaff
 from .serializers import UserProfileSerializer, PaymentSerializer, RegisterSerializer, UserSerializer
-from .services import create_product, create_price, create_checkout_session
+from .services import create_product, create_price, create_checkout_session, retrieve_checkout_session
 
 
 class UserProfileUpdateAPIView(generics.RetrieveUpdateAPIView):
@@ -76,3 +76,24 @@ class CoursePaymentCreateAPIView(APIView):
             },
             status=201,
         )
+
+class PaymentStatusAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        payment = get_object_or_404(Payment, pk=pk, user=request.user)
+
+        if not payment.stripe_session_id:
+            return Response({"detail": "Payment has no stripe_session_id"}, status=400)
+
+        session = retrieve_checkout_session(payment.stripe_session_id)
+
+        payment.stripe_status = session.get("payment_status", payment.stripe_status)
+        payment.save()
+
+        return Response({
+            "payment_id": payment.id,
+            "status": payment.stripe_status,
+            "stripe_session": session,
+        })
+
