@@ -36,7 +36,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "email", "password")
+        fields = "__all__"
+        read_only_fields = (
+            "user",
+            "stripe_product_id",
+            "stripe_price_id",
+            "stripe_session_id",
+            "stripe_payment_url",
+            "stripe_status",
+        )
 
         def create(self, validated_data):
             password = validated_data.pop("password")
