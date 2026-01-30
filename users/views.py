@@ -14,6 +14,9 @@ from .permissions import IsSelfOrStaff
 from .serializers import UserProfileSerializer, PaymentSerializer, RegisterSerializer, UserSerializer
 from .services import create_product, create_price, create_checkout_session, retrieve_checkout_session
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 class UserProfileUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
@@ -40,9 +43,29 @@ class UserViewSet(ModelViewSet):
             return [IsAuthenticated(), IsSelfOrStaff()]
         return [IsAuthenticated()]
 
+course_id_param = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    required=["course_id"],
+    properties={
+        "course_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="ID курса")
+    }
+)
+
+payment_create_response = openapi.Schema(
+    type=openapi.TYPE_OBJECT,
+    properties={
+        "payment_url": openapi.Schema(type=openapi.TYPE_STRING, format="url"),
+        "payment": openapi.Schema(type=openapi.TYPE_OBJECT),
+    }
+)
+
 class CoursePaymentCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        request_body=course_id_param,
+        responses={201: payment_create_response}
+    )
     def post(self, request):
         course_id = request.data.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
@@ -80,6 +103,16 @@ class CoursePaymentCreateAPIView(APIView):
 class PaymentStatusAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        responses={200: openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "payment_id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "status": openapi.Schema(type=openapi.TYPE_STRING),
+                "stripe_session": openapi.Schema(type=openapi.TYPE_OBJECT),
+            }
+        )}
+    )
     def get(self, request, pk):
         payment = get_object_or_404(Payment, pk=pk, user=request.user)
 

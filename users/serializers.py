@@ -13,6 +13,14 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = "__all__"
+        read_only_fields = (
+            "user",
+            "stripe_product_id",
+            "stripe_price_id",
+            "stripe_session_id",
+            "stripe_payment_url",
+            "stripe_status",
+        )
 
     def validate(self, attrs):
         course = attrs.get("paid_course")
@@ -36,15 +44,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "__all__"
-        read_only_fields = (
-            "user",
-            "stripe_product_id",
-            "stripe_price_id",
-            "stripe_session_id",
-            "stripe_payment_url",
-            "stripe_status",
-        )
+        fields = ("id", "email", "password")
 
         def create(self, validated_data):
             password = validated_data.pop("password")
