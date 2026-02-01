@@ -44,13 +44,15 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         course = serializer.save()
-
         now = timezone.now()
+
+        # уведомлять не чаще чем раз в 4 часа
         if course.last_notified_at and now - course.last_notified_at <= timedelta(hours=4):
             return
 
-        subscribers = course.subscribers.all()  # или ваша связь подписок
-        for user in subscribers:
+        subs = Subscription.objects.filter(course=course).select_related("user")
+        for sub in subs:
+            user = sub.user
             if user.email:
                 send_course_update_email.delay(user.email, course.title)
 
