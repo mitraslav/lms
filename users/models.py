@@ -61,6 +61,15 @@ class Payment(models.Model):
         verbose_name="способ оплаты",
     )
 
+    # Stripe fields
+    stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_price_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_session_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_payment_url = models.URLField(blank=True, null=True)
+
+    stripe_status = models.CharField(max_length=50, default="pending")
+
+
     def __str__(self):
         target = self.paid_course or self.paid_lesson
         return f"{self.user} - {target} - {self.amount}"
