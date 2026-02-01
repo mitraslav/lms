@@ -9,6 +9,10 @@ from .permissions import IsModer, IsOwner
 from .serializers import CourseSerializer, LessonSerializer
 from .paginators import BasePagination
 
+from django.utils import timezone
+from datetime import timedelta
+from lms.tasks import send_course_update_email
+
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.prefetch_related('lessons')
@@ -37,6 +41,21 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        course = serializer.save()
+
+        now = timezone.now()
+        if course.last_notified_at and now - course.last_notified_at <= timedelta(hours=4):
+            return
+
+        subscribers = course.subscribers.all()  # или ваша связь подписок
+        for user in subscribers:
+            if user.email:
+                send_course_update_email.delay(user.email, course.title)
+
+        course.last_notified_at = now
+        course.save(update_fields=["last_notified_at"])
 
 
 # ---- LESSONS (Generics) ----
