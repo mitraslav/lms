@@ -2,10 +2,7 @@ name: CI/CD
 
 on:
   push:
-    branches:
-      - develop
-      - feature/**
-      - main
+    branches: ["develop"]
   workflow_dispatch:
 
 jobs:
@@ -26,6 +23,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ВАЖНО: проект у тебя читает DJANGO_SECRET_KEY из окружения/.env
+      # В GitHub Actions .env нет -> Django падал.
+      - name: Create .env for CI
+        run: |
+          cat > .env << EOF
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_DEBUG=True
+          DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+          EOF
+
       - name: Run tests
         run: |
           python manage.py test
@@ -33,7 +40,6 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
 
     steps:
       - name: Deploy over SSH
@@ -45,10 +51,20 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e
+
             cd /opt/apps/lms
-            git pull origin develop
+
+            # Обновляем код (ветка develop)
+            git fetch --all
+            git reset --hard origin/develop
+
+            # Обновляем зависимости
             /opt/apps/lms/venv/bin/pip install -r requirements.txt
-            /opt/apps/lms/venv/bin/python manage.py migrate
+
+            # Миграции и статика
+            /opt/apps/lms/venv/bin/python manage.py migrate --noinput
             /opt/apps/lms/venv/bin/python manage.py collectstatic --noinput
+
+            # Перезапуск сервисов
             sudo systemctl restart lms
             sudo systemctl restart nginx
