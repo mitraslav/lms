@@ -1,0 +1,70 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["develop"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Чтобы тесты не падали из-за отсутствия SECRET_KEY в CI
+      - name: Create .env for CI
+        run: |
+          cat > .env << EOF
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_DEBUG=True
+          DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+          EOF
+
+      - name: Run tests
+        run: |
+          python manage.py test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SERVER_PORT }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          passphrase: ${{ secrets.SERVER_SSH_PASSPHRASE }}
+          script: |
+            set -e
+
+            cd /opt/apps/lms
+
+            # Обновляем код (ветка develop)
+            git fetch --all
+            git reset --hard origin/develop
+
+            # Обновляем зависимости
+            /opt/apps/lms/venv/bin/pip install -r requirements.txt
+
+            # Миграции и статика
+            /opt/apps/lms/venv/bin/python manage.py migrate --noinput
+            /opt/apps/lms/venv/bin/python manage.py collectstatic --noinput
+
+            # Перезапуск сервисов
+            sudo systemctl restart lms
+            sudo systemctl restart nginx
