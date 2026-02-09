@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+from celery.schedules import crontab
 
 load_dotenv()
 
@@ -193,8 +194,6 @@ CELERY_ENABLE_UTC = True
 
 # Для django-celery-beat
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-
-from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
     "deactivate-inactive-users-daily": {
