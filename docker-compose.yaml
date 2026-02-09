@@ -103,7 +103,7 @@ services:
       # наружу отдаём только nginx
       - "${NGINX_PORT:-80}:80"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       # nginx раздаёт то, что backend собирает/кладёт в эти тома
       - static_volume:/staticfiles:ro
       - media_volume:/media:ro
