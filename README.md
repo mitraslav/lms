@@ -66,7 +66,7 @@ docker compose up --build -d
 ### Backend (Django)
 Откройте в браузере:
 
-- http://localhost/
+- http://localhost/admin/
 
 Логи:
 
