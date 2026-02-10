@@ -43,15 +43,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "${DJANGO_PORT:-8000}:8000"
+    # backend наружу не публикуем — к нему ходит nginx по внутренней сети compose
+    expose:
+      - "8000"
     command: >
       sh -c "
       python manage.py migrate &&
-      python manage.py runserver 0.0.0.0:8000
+      python manage.py collectstatic --noinput &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000
       "
     volumes:
       - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
 
   celery:
     build:
@@ -89,5 +93,22 @@ services:
     volumes:
       - .:/app
 
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: lms_nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # наружу отдаём только nginx
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # nginx раздаёт то, что backend собирает/кладёт в эти тома
+      - static_volume:/staticfiles:ro
+      - media_volume:/media:ro
+
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:

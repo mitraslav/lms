@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import User, Payment
-from django.contrib.auth import get_user_model
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
